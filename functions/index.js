@@ -46,30 +46,36 @@ exports.prices = functions.https.onRequest((req, res) => {
         }
         const timeDifference = new Date () - new Date(lastUpdateData);
         /**
-         * If the time difference is bigger than 180000 milliseconds (3 minutes),
+         * If the time difference is bigger than 300000 milliseconds (5 minutes),
          * the server will fetch data from axios, save the data to the database and 
          * return that data to the application to render those results.
          * Otherwise, the server will result the data saved in the Firebase Database,
          * to avoid too many external URL requests, and also speed up fetching.
          */
-        if (timeDifference > 180000) { 
+        if (timeDifference > 300000) { 
             return axios.get('https://localbitcoins.com/bitcoinaverage/ticker-all-currencies/')
                 .then( response => {
-                    prices.set(response.data);
                     lastUpdate.set(Date ());
-                    return res.status(200).json({
-                        data: JSON.stringify(response.data)
+                    res.status(200).send(response.data);
+                    return prices.set(response.data, (error) => {
+                        if (error) {
+                            // The write failed...
+                            console.log(error); // Firebase logging
+                            return res.status(500).json({
+                                error: 'Something went wrong.'
+                            });
+                        } 
+                        return null;
                     });
                 })
                 .catch(error => {
+                    console.log(error) // Firebase logging
                     return res.status(500).json({
-                        error: JSON.stringify(error)
+                        error: 'Something went wrong.'
                     });
                 });
         } else {
-            return res.status(200).json({
-                data: JSON.stringify(pricesData)
-            });
+            res.status(200).send(pricesData);
         }
     });
 });
