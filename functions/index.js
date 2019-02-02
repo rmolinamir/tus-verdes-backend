@@ -75,7 +75,7 @@ exports.prices = functions.https.onRequest((req, res) => {
                     });
                 });
         } else {
-            res.status(200).send(pricesData);
+            return res.status(200).send(pricesData);
         }
     });
 });
